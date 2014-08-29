@@ -18,7 +18,7 @@ public class MainActivity extends Activity {
         final Button button = (Button) findViewById(R.id.btn_run);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //startActivity(new Intent(getApplicationContext(), MapsActivity.class));
+                startActivity(new Intent(getApplicationContext(), MapsActivity.class));
             }
         });
 
