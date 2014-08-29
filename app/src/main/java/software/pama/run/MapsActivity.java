@@ -1,33 +1,17 @@
 package software.pama.run;
 
-import android.app.Dialog;
-import android.app.DialogFragment;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentSender;
 import android.location.Location;
-import android.location.LocationListener;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
-import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLocationChangeListener {
     // Might be null if Google Play services APK is not available.
@@ -61,7 +45,7 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
      * call {@link #setUpMap()} once when {@link #mMap} is not null.
      * <p>
      * If it isn't installed {@link SupportMapFragment} (and
-     * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
+     * {@link com.google.android.gms.maps.MapView MapView}) will show autoZoom prompt for the user to
      * install/update the Google Play services APK on their device.
      * <p>
      * A user can return to this FragmentActivity after following the prompt and correctly
@@ -71,7 +55,7 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
      * method in {@link #onResume()} to guarantee that it will be called.
      */
     private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map.
+        // Do autoZoom null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
@@ -85,7 +69,7 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
 
     /**
      * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
+     * just add autoZoom marker near Africa.
      * <p>
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
@@ -99,8 +83,37 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
     @Override
     public void onMyLocationChange(Location location) {
         LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+        autoZoom(location, latlng);
+        // Wyliczamy dystans
+        countAndDrawDistance(location, latlng);
+    }
+
+    /**
+     * Wylicza dystans oraz rysuje linię pomiędzy punktami
+     *
+     * @param location
+     * @param latlng
+     */
+    private void countAndDrawDistance(Location location, LatLng latlng) {
+        float dist = lastLocation.distanceTo(location);
+        // Jeśli wiekszy niż 4m
+        if(dist > 4.0) {
+            drawLine(latlng);
+            distance += dist;
+            TextView txtDistance = (TextView) findViewById(R.id.txtDistance);
+            txtDistance.setText(Float.toString(distance) + " m");
+            lastLocation = location;
+        }
+    }
+
+    /**
+     * Automatycznie centrująca pozycję kamery oraz zapamiętująca ostatnią wartość zooma ustawioną przez użytkownika
+     *
+     * @param location - aktualna lokalizcja
+     * @param latlng -
+     */
+    private void autoZoom(Location location, LatLng latlng) {
         float zoom;
-        float dist;
         // Jeśli dopiero co uruchomiliśmy mapy (jeśli zostala wywołana ta funkcja to znaczy ze mapy sa juz gotowe)
         if(!locationEnabled) {
             zoom = 15;
@@ -115,21 +128,10 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
         CameraUpdate myLoc = CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder().target(latlng).zoom(zoom).build());
         //mMap.animateCamera(myLoc);
-
-        // Wyliczamy dystans
-        dist = calculateDistance(lastLocation, location);
-        // Jeśli wiekszy niż 4m
-        if(dist > 4.0) {
-            drawLine(latlng);
-            distance += dist;
-            TextView txtDistance = (TextView) findViewById(R.id.txtDistance);
-            txtDistance.setText(Float.toString(distance) + " m");
-            lastLocation = location;
-        }
     }
 
     /**
-     * Funkcja rysująca linię na podstawie parametru LatLng
+     * Rysuje linię na podstawie parametru LatLng
      *
      * @param latlng - odcinek pomiędzy dwoma lokalizacjami
      */
@@ -138,15 +140,5 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLoca
         mMap.clear();
         // Rysujemy calą linię z dodanym nowym punktem
         mMap.addPolyline(line.add(latlng));
-    }
-
-    /**
-     * Funkcja wyliczająca dystans pomiędzy dwoma punktami na mapie
-     *
-     * @param p1 - lokalizacja pierwszego punktu
-     * @param p2 - lokalizaja drugiego punktu
-     */
-    public float calculateDistance(Location p1, Location p2) {
-        return p1.distanceTo(p2);
     }
 }
