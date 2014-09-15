@@ -10,7 +10,7 @@ import android.widget.Button;
 
 
 public class MainActivity extends Activity {
-
+    //moje zmiany w programie
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
