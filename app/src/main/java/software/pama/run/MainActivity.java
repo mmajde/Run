@@ -15,29 +15,30 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.model.LatLng;
-
 
 public class MainActivity extends Activity {
-    // Connection
-    private LocationService mService;
-    private boolean mBound = false;
-    private Location mCurrentLocation;
-    private float distance = 0;
+    // Serwis otrzymujący uaktualnienia lokalizacji.
+    private LocationService locationService;
+    // Wartość definiująca czy istnieje połączenie z serwisem.
+    private boolean serviceBounded = false;
+    // Bieżąca lokalizacja użytkownika.
+    private Location currentLocation;
+    // Całkowity przebyty dystans.
+    private float totalDistance = 0;
 
     ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            if(mService == null) {
-                mBound = true;
+            if(locationService == null) {
+                serviceBounded = true;
                 LocationService.LocalBinder binder = (LocationService.LocalBinder) iBinder;
-                mService = binder.getLocationService();
+                locationService = binder.getLocationService();
             }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            mBound = false;
+            locationService = null;
         }
     };
 
@@ -50,38 +51,48 @@ public class MainActivity extends Activity {
         final Button runService = (Button) findViewById(R.id.btn_run);
         runService.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), LocationService.class);
-                bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-                startService(intent);
+                bindAndStartService();
             }
         });
 
         final Button getDistance = (Button) findViewById(R.id.btn_get_distance);
         getDistance.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                updateDistance();
+                updateLocationAndDistance();
             }
         });
 
     }
 
-    private void updateDistance() {
-        if (mBound) {
-            Location location = mService.getmCurrentLocation();
-            if (mCurrentLocation == null) {
-                mCurrentLocation = location;
+    /**
+     * Powiązuje aktywność z serwisem i uruchamia serwis.
+     */
+    private void bindAndStartService() {
+        Intent intent = new Intent(getApplicationContext(), LocationService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        startService(intent);
+    }
+
+    /**
+     * Uaktualnia biężącą lokalizację oraz wylicza całkowity dystans.
+     */
+    private void updateLocationAndDistance() {
+        if (serviceBounded) {
+            Location location = locationService.getCurrentLocation();
+            if (currentLocation == null) {
+                currentLocation = location;
                 return;
             }
             if (location == null) {
                 return;
             }
-            float dist = mCurrentLocation.distanceTo(location);
-            if (dist > 0.0) {
-                distance += dist;
+            float dist = currentLocation.distanceTo(location);
+            if (dist >= 0.0) {
+                totalDistance += dist;
                 TextView txtDistance = (TextView) findViewById(R.id.txtDistance);
-                txtDistance.setText(Float.toString(distance) + " m");
-                Log.i("I", Float.toString(distance));
-                mCurrentLocation = location;
+                txtDistance.setText(Float.toString(totalDistance) + " m");
+                Log.i("I", Float.toString(totalDistance));
+                currentLocation = location;
             }
         }
     }
@@ -107,9 +118,12 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (mBound) {
+        Log.v("STOP_ACTIVITY_1", "DONE");
+        if(serviceBounded) {
+            Log.v("STOP_ACTIVITY_2", "DONE");
             unbindService(mConnection);
-            mBound = false;
+            serviceBounded = false;
+            locationService.stopSelf();
         }
         super.onDestroy();
     }

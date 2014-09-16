@@ -14,13 +14,24 @@ import android.provider.SyncStateContract;
 import android.util.Log;
 import android.widget.Toast;
 
+/**
+ * Serwis pobierający lokalizację użytkownika zarówno gdy aplikacja jest w trakcie działania
+ * jak i wtedy gdy jest zatrzymana.
+ */
 public class LocationService extends Service implements LocationListener
 {
+    // Czas co jaki ma być uaktualniana informacja o lokalizacji.
     private static final int UPDATE_TIME_MS = 100;
 
+    // Zapewnia dostęp do usług lokalizacji.
     public LocationManager locationManager;
-    public Location mCurrentLocation = null;
-    private Handler handler = new Handler();
+    // Bieżąca lokalizacja.
+    public Location currentLocation = null;
+    // Przechowuje wątki serwisu.
+    private Handler threadHandler = new Handler();
+    // Pozwala powiązać serwis z aktywnością.
+    private IBinder localBinder = new LocalBinder();
+    // Pomocniczy toast do wyświetlania lokalizacji.
     private Toast mToast;
 
     @Override
@@ -43,20 +54,16 @@ public class LocationService extends Service implements LocationListener
         return START_STICKY;
     }
 
-//    public void runLocationService() {
-//
-//    }
-
     private void getLastKnownLocation() {
-        if(mCurrentLocation == null) {
+        if(currentLocation == null) {
             String list[] = {
                     LocationManager.GPS_PROVIDER,
                     LocationManager.NETWORK_PROVIDER,
                     LocationManager.PASSIVE_PROVIDER };
             for (String s : list) {
                 Location tmp = locationManager.getLastKnownLocation(s);
-                if (mCurrentLocation == null || tmp.getTime() > mCurrentLocation.getTime()) {
-                    mCurrentLocation = tmp;
+                if (currentLocation == null || tmp.getTime() > currentLocation.getTime()) {
+                    currentLocation = tmp;
                 }
             }
         }
@@ -66,26 +73,28 @@ public class LocationService extends Service implements LocationListener
     public void onDestroy() {
         Log.v("STOP_SERVICE", "DONE");
         locationManager.removeUpdates(this);
-        handler.removeCallbacksAndMessages(showLocation);
-        stopSelf();
+        threadHandler.removeCallbacksAndMessages(showLocation);
         super.onDestroy();
     }
 
+    /**
+     * Wątek wyświetlający lokalizację.
+      */
     private Runnable showLocation = new Runnable() {
         @Override
         public void run() {
-            if(mCurrentLocation != null) {
-                mToast.setText(mCurrentLocation.getLatitude() + " " + mCurrentLocation.getLongitude());
+            if(currentLocation != null) {
+                mToast.setText(currentLocation.getLatitude() + " " + currentLocation.getLongitude());
                 mToast.show();
             }
-            handler.postDelayed(this, 1000);
+            threadHandler.postDelayed(this, 1000);
         }
     };
 
-    public void onLocationChanged(final Location loc)
+    public void onLocationChanged(final Location location)
     {
         Log.i("*********************", "Location changed");
-        mCurrentLocation = loc;
+        currentLocation = location;
     }
 
     public void onProviderDisabled(String provider)
@@ -93,20 +102,18 @@ public class LocationService extends Service implements LocationListener
         Toast.makeText(getApplicationContext(), "Gps Disabled", Toast.LENGTH_SHORT).show();
     }
 
-
     public void onProviderEnabled(String provider)
     {
         Toast.makeText( getApplicationContext(), "Gps Enabled", Toast.LENGTH_SHORT).show();
     }
 
-
-    public void onStatusChanged(String provider, int status, Bundle extras)
-    {
+    public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.d(SyncStateContract.Constants.DATA, provider + " \nSTATUS: " + status);
     }
 
-    private IBinder mBinder = new LocalBinder();
-
+    /**
+     * Klasa pozwalająca powiązać serwis z aktywnością.
+     */
     public class LocalBinder extends Binder {
         public LocationService getLocationService() {
             return LocationService.this;
@@ -115,10 +122,13 @@ public class LocationService extends Service implements LocationListener
 
     @Override
     public IBinder onBind(Intent intent) {
-        return mBinder;
+        return localBinder;
     }
 
-    public Location getmCurrentLocation() {
-        return mCurrentLocation;
+    /**
+     * Zwraca bięzącą lokalizację.
+     */
+    public Location getCurrentLocation() {
+        return currentLocation;
     }
 }
