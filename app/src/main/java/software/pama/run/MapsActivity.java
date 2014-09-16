@@ -13,6 +13,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.util.Vector;
+
 public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLocationChangeListener {
     // Might be null if Google Play services APK is not available.
     private GoogleMap mMap;
