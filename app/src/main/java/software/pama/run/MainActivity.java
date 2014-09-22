@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
@@ -17,6 +18,9 @@ import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
+
+    // Czas określający co ile ms zaktualizować lokalizację.
+    private final long UPDATE_TIME_MS = 2000;
     // Serwis otrzymujący uaktualnienia lokalizacji.
     private LocationService locationService;
     // Wartość definiująca czy istnieje połączenie z serwisem.
@@ -25,6 +29,8 @@ public class MainActivity extends Activity {
     private Location currentLocation;
     // Całkowity przebyty dystans.
     private float totalDistance = 0;
+    // Przechowuje wątki aktywności.
+    private Handler threadHandler = new Handler();
 
     ServiceConnection mConnection = new ServiceConnection() {
         @Override
@@ -52,6 +58,7 @@ public class MainActivity extends Activity {
         runService.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 bindAndStartService();
+                showLocation.run();
             }
         });
 
@@ -80,22 +87,50 @@ public class MainActivity extends Activity {
         if (serviceBounded) {
             Location location = locationService.getCurrentLocation();
             if (currentLocation == null) {
-                currentLocation = location;
+                if(isAccurate(location))
+                    currentLocation = location;
                 return;
             }
             if (location == null) {
                 return;
             }
-            float dist = currentLocation.distanceTo(location);
-            if (dist >= 0.0) {
-                totalDistance += dist;
-                TextView txtDistance = (TextView) findViewById(R.id.txtDistance);
-                txtDistance.setText(Float.toString(totalDistance) + " m");
-                Log.i("I", Float.toString(totalDistance));
-                currentLocation = location;
-            }
+
+//            if (dist >= 0.0) {
+                if(isAccurate(location)) {
+                    float dist = currentLocation.distanceTo(location);
+                    totalDistance += dist;
+                    TextView txtDistance = (TextView) findViewById(R.id.txtDistance);
+                    txtDistance.setText(Float.toString(totalDistance) + " m");
+                    Log.d("D", "Total distance: " + totalDistance);
+                    currentLocation = location;
+                }
+//            }
         }
     }
+
+    /**
+     * Metoda sprawdzająca czy lokalizacja pobrana z serwisu jest wystarczająco dokładna.
+     */
+    private boolean isAccurate(Location location) {
+        if(location == null)
+            return false;
+        Log.d("D", "Location accuracy: " + location.getAccuracy());
+        if(location.getAccuracy() > 0.0 && location.getAccuracy() < 10.0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Wątek wyświetlający lokalizację.
+     */
+    private Runnable showLocation = new Runnable() {
+        @Override
+        public void run() {
+            updateLocationAndDistance();
+            threadHandler.postDelayed(this, UPDATE_TIME_MS);
+        }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -118,13 +153,12 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        Log.v("STOP_ACTIVITY_1", "DONE");
         if(serviceBounded) {
-            Log.v("STOP_ACTIVITY_2", "DONE");
             unbindService(mConnection);
             serviceBounded = false;
             locationService.stopSelf();
         }
+        threadHandler.removeCallbacksAndMessages(showLocation);
         super.onDestroy();
     }
 }

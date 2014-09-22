@@ -28,7 +28,7 @@ public class LocationService extends Service implements LocationListener
     // Bieżąca lokalizacja.
     public Location currentLocation = null;
     // Przechowuje wątki serwisu.
-    private Handler threadHandler = new Handler();
+//    private Handler threadHandler = new Handler();
     // Pozwala powiązać serwis z aktywnością.
     private IBinder localBinder = new LocalBinder();
     // Pomocniczy toast do wyświetlania lokalizacji.
@@ -44,12 +44,12 @@ public class LocationService extends Service implements LocationListener
     public int onStartCommand(Intent intent, int flags, int startId)
     {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+        //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         //getLastKnownLocation();
         mToast = Toast.makeText(getApplicationContext(), "Service started", Toast.LENGTH_LONG);
         mToast.show();
-        showLocation.run();
+//        showLocation.run();
 
         return START_STICKY;
     }
@@ -73,23 +73,23 @@ public class LocationService extends Service implements LocationListener
     public void onDestroy() {
         Log.v("STOP_SERVICE", "DONE");
         locationManager.removeUpdates(this);
-        threadHandler.removeCallbacksAndMessages(showLocation);
+//        threadHandler.removeCallbacksAndMessages(showLocation);
         super.onDestroy();
     }
 
-    /**
-     * Wątek wyświetlający lokalizację.
-      */
-    private Runnable showLocation = new Runnable() {
-        @Override
-        public void run() {
-            if(currentLocation != null) {
-                mToast.setText(currentLocation.getLatitude() + " " + currentLocation.getLongitude());
-                mToast.show();
-            }
-            threadHandler.postDelayed(this, 1000);
-        }
-    };
+//    /**896+32w32w32w32w32w32w32w32w32w32w32w32w32w
+//     * Wątek wyświetlający lokalizację.
+//      */
+//    private Runnable showLocation = new Runnable() {
+//        @Override
+//        public void run() {
+//            if(currentLocation != null) {
+//                mToast.setText(currentLocation.getLatitude() + " " + currentLocation.getLongitude());
+//                mToast.show();
+//            }
+//            threadHandler.postDelayed(this, 1000);
+//        }
+//    };
 
     public void onLocationChanged(final Location location)
     {
