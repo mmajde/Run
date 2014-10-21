@@ -8,7 +8,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".run.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MapsActivity"
+            android:name=".maps.MapsActivity"
             android:label="@string/title_activity_maps" >
         </activity>
 
@@ -29,10 +29,15 @@
             android:value="@string/google_maps_key" />
 
         <service
-            android:name=".LocationService"
+            android:name=".location.LocationService"
             android:enabled="true"
             android:exported="true" >
         </service>
+
+        <activity
+            android:name=".tournament.TournamentActivity"
+            android:label="@string/title_activity_tournament" >
+        </activity>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -43,7 +48,7 @@
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
          Google MapsActivity Android API v2, but are recommended.
     -->
-    <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
 </manifest>

@@ -1,4 +1,4 @@
-package software.pama.run;
+package software.pama.run.maps;
 
 import android.location.Location;
 import android.support.v4.app.FragmentActivity;
@@ -13,7 +13,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.util.Vector;
+import software.pama.run.R;
 
 public class MapsActivity extends FragmentActivity implements GoogleMap.OnMyLocationChangeListener {
     // Might be null if Google Play services APK is not available.

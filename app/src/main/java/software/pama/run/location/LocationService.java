@@ -1,4 +1,4 @@
-package software.pama.run;
+package software.pama.run.location;
 
 import android.app.Service;
 import android.content.Context;
@@ -8,7 +8,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.provider.SyncStateContract;
 import android.util.Log;
@@ -20,24 +19,21 @@ import android.widget.Toast;
  */
 public class LocationService extends Service implements LocationListener
 {
-    // Czas co jaki ma być uaktualniana informacja o lokalizacji.
-    private static final int UPDATE_TIME_MS = 100;
+    private static final int LOCATION_UPDATE_TIME_MS = 500;
+    private static final int LOCATION_UPDATE_DIST_M = 15;
+    private static final int LOCATION_ACCURACY_M = 20;
 
+    public Location currentLocation;
     // Zapewnia dostęp do usług lokalizacji.
     public LocationManager locationManager;
-    // Bieżąca lokalizacja.
-    public Location currentLocation = null;
-    // Przechowuje wątki serwisu.
-//    private Handler threadHandler = new Handler();
     // Pozwala powiązać serwis z aktywnością.
-    private IBinder localBinder = new LocalBinder();
-    // Pomocniczy toast do wyświetlania lokalizacji.
-    private Toast mToast;
+    private IBinder localBinder;
 
     @Override
     public void onCreate()
     {
         super.onCreate();
+        localBinder = new LocalBinder();
     }
 
     @Override
@@ -45,11 +41,10 @@ public class LocationService extends Service implements LocationListener
     {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_TIME_MS, LOCATION_UPDATE_DIST_M, this);
         //getLastKnownLocation();
-        mToast = Toast.makeText(getApplicationContext(), "Service started", Toast.LENGTH_LONG);
+        Toast mToast = Toast.makeText(getApplicationContext(), "Service started", Toast.LENGTH_LONG);
         mToast.show();
-//        showLocation.run();
 
         return START_STICKY;
     }
@@ -73,28 +68,15 @@ public class LocationService extends Service implements LocationListener
     public void onDestroy() {
         Log.v("STOP_SERVICE", "DONE");
         locationManager.removeUpdates(this);
-//        threadHandler.removeCallbacksAndMessages(showLocation);
         super.onDestroy();
     }
-
-//    /**896+32w32w32w32w32w32w32w32w32w32w32w32w32w
-//     * Wątek wyświetlający lokalizację.
-//      */
-//    private Runnable showLocation = new Runnable() {
-//        @Override
-//        public void run() {
-//            if(currentLocation != null) {
-//                mToast.setText(currentLocation.getLatitude() + " " + currentLocation.getLongitude());
-//                mToast.show();
-//            }
-//            threadHandler.postDelayed(this, 1000);
-//        }
-//    };
 
     public void onLocationChanged(final Location location)
     {
         Log.i("*********************", "Location changed");
-        currentLocation = location;
+        if(isAccurate(location)) {
+            currentLocation = location;
+        }
     }
 
     public void onProviderDisabled(String provider)
@@ -111,6 +93,16 @@ public class LocationService extends Service implements LocationListener
         Log.d(SyncStateContract.Constants.DATA, provider + " \nSTATUS: " + status);
     }
 
+    private boolean isAccurate(Location location) {
+        if(location == null)
+            return false;
+        Log.d("D", "Location accuracy: " + location.getAccuracy());
+        if(location.getAccuracy() > 0.0 && location.getAccuracy() < LOCATION_ACCURACY_M) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Klasa pozwalająca powiązać serwis z aktywnością.
      */
@@ -125,9 +117,6 @@ public class LocationService extends Service implements LocationListener
         return localBinder;
     }
 
-    /**
-     * Zwraca bięzącą lokalizację.
-     */
     public Location getCurrentLocation() {
         return currentLocation;
     }

@@ -6,5 +6,7 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_maps">Map</string>
     <string name="txtDistance">0</string>
+    <string name="title_activity_tournament">TournamentActivity</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>
